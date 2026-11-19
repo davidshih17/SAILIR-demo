@@ -15,8 +15,9 @@ export default async function build() {
   root.append(h('div', { class: 'panel stack' },
     h('div', { class: 'row spread' }, h('h3', {}, `Reducing ${intStr(d.integral)} (r=${d.r}, s=${d.s}) to masters`),
       h('div', { class: 'legend' }, h('span', {}, h('i', { style: 'background:var(--sailir)' }), 'Finished'), h('span', {}, h('i', { style: 'background:var(--target)' }), 'Running'), h('span', {}, h('i', { style: 'background:var(--line)' }), 'Not started'))),
+    h('p', { class: 'note' }, `Each bar is one job, and its row is the job's dependency depth: the number of jobs in the chain that led to its integral. The starting integral has depth 0. An integral first produced by a job at depth d has depth d + 1. This reduction reaches depth ${Math.max(...d.jobs.map((j) => j[0]))}.`),
     canvas, h('div', { class: 'row', style: 'flex-wrap:nowrap' }, button, slider), stats,
-    h('p', { class: 'note' }, `Each bar is one job, and rows are dependency depth. Job durations were measured when this reduction was rerun for this page on ${d.procs} CPU cores. The timeline places each job right after the job that discovered it, which is the ideal parallel schedule. The published run of this integral used ${comma(d.published.jobs)} jobs; this rerun used ${comma(d.jobs.length)}.`)),
+    h('p', { class: 'note' }, `Job durations were measured when this reduction was rerun for this page on ${d.procs} CPU cores. The timeline places each job right after the job that discovered it, which is the ideal parallel schedule. The published run of this integral used ${comma(d.published.jobs)} jobs; this rerun used ${comma(d.jobs.length)}.`)),
   mlNote('Why the cache matters', `The same integrals keep reappearing on different branches. In this run, ${comma(d.cache_hits)} lookups found an integral that was already solved, so no job had to run again.`));
 
   const jobs = d.jobs.map(([depth, start, end, r, s, steps, terms, children, hits]) => ({ depth, start, end, r, s, steps, terms, children, hits }));

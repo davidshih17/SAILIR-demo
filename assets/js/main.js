@@ -43,8 +43,8 @@ if (new URLSearchParams(location.search).has('meter')) import('./meter.js');
 // Sections are built in page order.  Each one reserves about its final height first, so content
 // never moves under the reader while the page fills in.  Heights are [desktop, phone] in pixels.
 const SECTIONS = {
-  play: ['./play.js', 1000, 1778], scramble: ['./scramble.js', 950, 1403], data: ['./explorer.js', 1309, 2500], model: ['./anatomy.js', 1145, 1512],
-  train: ['./training.js', 828, 1246], beam: ['./beam.js', 1112, 976], tree: ['./tree.js', 1148, 959], results: ['./results.js', 817, 1921],
+  play: ['./play.js', 1075, 1885], scramble: ['./scramble.js', 950, 1403], data: ['./explorer.js', 1309, 2500], model: ['./anatomy.js', 1145, 1512],
+  train: ['./training.js', 828, 1246], beam: ['./beam.js', 1112, 976], tree: ['./tree.js', 1202, 1054], results: ['./results.js', 817, 1921],
 };
 const phone = innerWidth <= 980;
 for (const [id, [, desktop, narrow]] of Object.entries(SECTIONS)) document.getElementById(id).style.minHeight = `${phone ? narrow : desktop}px`;
