@@ -43,9 +43,10 @@ export default async function build() {
     detail.replaceChildren(
       h('div', { class: 'row spread' }, h('div', {}, h('h3', {}, 'Target'), h('div', { class: 'int t' }, intStr(x.target)), h('p', { class: 'note' }, `Weight (${x.w[0]}, ${x.w[1]}), step ${x.step + 1} of its unscramble, ${x.nSubs} earlier substitutions`)), glyph(x.target, { size: 120 })),
       h('h3', {}, 'Expression'),
-      h('div', { class: 'terms', style: 'max-height:150px' }, x.expr.map(([a, c]) => h('div', { class: `term${a.join() === x.target.join() ? ' t' : ''}` }, h('span', { class: 'c' }, String(c)), h('span', { class: 'int' }, intStr(a))))),
+      h('div', { class: 'terms' }, [...x.expr].sort((p, q) => (q[0].join() === x.target.join()) - (p[0].join() === x.target.join())).slice(0, 12).map(([a, c]) => h('div', { class: `term${a.join() === x.target.join() ? ' t' : ''}` }, h('span', { class: 'c' }, String(c)), h('span', { class: 'int' }, intStr(a))))),
+      x.expr.length > 12 ? h('p', { class: 'note' }, `Showing 12 of ${x.expr.length} terms.`) : null,
       h('h3', {}, `Model ranking of ${x.n} valid actions`),
-      h('div', { class: 'actions', style: 'max-height:250px' }, x.top.map((a, i) => {
+      h('div', { class: 'actions' }, x.top.map((a, i) => {
         const isOracle = JSON.stringify([a.op, a.d]) === oracleKey;
         return h('div', { class: `action${isOracle ? ' top' : ''}`, style: 'cursor:default' }, h('span', { class: 'bar', style: `width:${(100 * a.p).toFixed(1)}%` }), h('span', { class: 'rank' }, `#${a.rank ?? i + 1}`),
           h('span', { class: 'what' }, `Op ${a.op}: ${OP_NAMES[a.op]}`, h('small', { class: 'mono' }, `seed ${intStr(x.target.map((v, j) => v + a.d[j]))}`)),

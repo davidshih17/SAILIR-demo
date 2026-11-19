@@ -66,17 +66,12 @@ export function tip(node, htmlFn) {
   return node;
 }
 
-// Run a section's builder once it is near the viewport, so the page opens quickly.
-export function whenNear(id, build) {
-  const root = document.getElementById(id);
-  const run = () => build().catch((err) => {
+// Build one section, reporting a failure in place.
+export async function buildSection(id, build) {
+  try { await build(); } catch (err) {
     console.error(err);
-    root.append(h('p', { class: 'error' }, `This section could not load: ${err.message}. Reload the page to try again.`));
-  });
-  const io = new IntersectionObserver((entries) => {
-    if (entries.some((e) => e.isIntersecting)) { io.disconnect(); run(); }
-  }, { rootMargin: '900px 0px' });
-  io.observe(root);
+    document.getElementById(id).append(h('p', { class: 'error' }, `This section could not load: ${err.message}. Reload the page to try again.`));
+  }
 }
 
 // A simple play/pause loop over integer frames, driving a range input.

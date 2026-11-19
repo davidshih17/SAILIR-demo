@@ -16,10 +16,10 @@ export default async function build() {
   const slider = h('input', { type: 'range', min: 0, value: 0, id: 'scramble-slider', 'aria-label': 'Step' });
   const button = h('button', { class: 'btn primary', type: 'button', id: 'scramble-play' }, 'Play');
   const phase = h('div', { class: 'eyebrow' });
-  const title = h('h3');
-  const detail = h('p', { class: 'note' });
+  const title = h('h3', { style: 'min-height:2.3em' });
+  const detail = h('p', { class: 'note', style: 'min-height:4.6em' });
   const stats = h('div', { class: 'stats' });
-  const ledger = h('div', { class: 'stack' });
+  const ledger = h('div', { class: 'stack', style: 'min-height:260px;align-content:start' });
   const eq = h('div', { class: 'ml' });
   root.append(h('div', { class: 'two wide-left' },
     h('div', { class: 'panel stack' }, h('div', { class: 'row spread' }, h('h3', {}, 'Integrals in the expression, by weight'), pick), svg,
