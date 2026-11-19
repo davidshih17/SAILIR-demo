@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SAILIR Demo</title>
+<meta name="description" content="An interactive tour of SAILIR, a self-supervised transformer that reduces Feynman loop integrals one IBP identity at a time.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#top">SAILIR</a>
+  <nav class="topnav" id="topnav" aria-label="Sections">
+    <a href="#play">Play</a><a href="#scramble">Training data</a><a href="#data">Explorer</a><a href="#model">Model</a><a href="#train">Training</a><a href="#beam">Beam search</a><a href="#tree">Full reduction</a><a href="#results">Results</a>
+  </nav>
+  <button class="theme" id="theme" type="button">Dark</button>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div>
+    <h1>SAILIR</h1>
+    <p class="sub">Learning to unscramble Feynman loop integrals</p>
+    <p class="pitch">Laporta solves one large linear system, and memory sets the limit. SAILIR reduces an integral one IBP identity at a time, with a transformer choosing each identity. It never builds a global linear system.</p>
+    <p class="links"><a href="https://arxiv.org/abs/2604.05034">Paper: arXiv:2604.05034</a><a href="https://github.com/davidshih17/SAILIR">Code and trained model</a></p>
+  </div>
+  <figure class="hero-diagram" style="margin:0">
+    <div id="hero-glyph"></div>
+    <figcaption>The two-loop triangle-box family: six propagators D₁…D₆ and one irreducible scalar product D₇. All external legs are massive. A red dot marks a raised propagator power. Every example on this page belongs to this family.</figcaption>
+  </figure>
+</section>
+<div class="facts">
+  <div class="fact"><b>16 of 16</b><span>benchmark integrals reduced to the 16 masters</span></div>
+  <div class="fact"><b>~3 GB</b><span>peak memory per worker, roughly flat across all 16 integrals</span></div>
+  <div class="fact"><b>8.7 GB</b><span>Kira's peak on the hardest integral tested (r=13, s=7)</span></div>
+  <div class="fact"><b>0 labels</b><span>needed from an existing IBP solver for training</span></div>
+</div>
+
+<section class="section" id="play"></section>
+<section class="section" id="scramble"></section>
+<section class="section" id="data"></section>
+<section class="section" id="model"></section>
+<section class="section" id="train"></section>
+<section class="section" id="beam"></section>
+<section class="section" id="tree"></section>
+<section class="section" id="results"></section>
+</main>
+
+<footer>
+  <p>Based on D. Shih, <a href="https://arxiv.org/abs/2604.05034">Learning to Unscramble Feynman Loop Integrals with SAILIR</a>, arXiv:2604.05034. Benchmarks and the training log come from the <a href="https://github.com/davidshih17/SAILIR">published repository</a>. Other examples were generated for this page with the published code and checkpoint; the scripts are in <a href="https://github.com/davidshih17/SAILIR-demo/tree/main/tools">tools/</a>.</p>
+</footer>
+<div class="tip" id="tip" hidden></div>
+<script src="vendor/katex/katex.min.js" defer></script>
+<script type="module" src="assets/js/main.js"></script>
+</body>
+</html>
