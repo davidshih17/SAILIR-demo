@@ -44,7 +44,7 @@ for k in 0 1 2 3 4 5 6 7; do python gen_scrambles.py --shard $k & done; wait
 python eval_samples.py
 python export_onnx.py
 python make_vectors.py
-python run_reduction.py --integral 1,1,2,1,1,1,-4 --out ../work/reduction_r7s4.json
+python run_reduction.py --integral 1,1,2,1,1,1,-4 --out ../work/reduction_r7s4_v2.json
 python curate_play.py
 python build_data.py play
 ```

@@ -17,6 +17,9 @@ from common import DATA_DIR, SAILIR_DIR, WORK_DIR, load_trained_model
 from export_onnx import ExportedClassifier, sample_inputs
 
 
+REDUCTION = 'reduction_r7s4_v2.json'
+
+
 def dump(name, obj):
     path = DATA_DIR / f'{name}.json'
     path.write_text(json.dumps(obj, separators=(',', ':')))
@@ -219,7 +222,7 @@ def beam():
 
 
 def reduction(rows):
-    d = json.load(open(WORK_DIR / 'reduction_r7s4.json'))
+    d = json.load(open(WORK_DIR / REDUCTION))
     J = {tuple(j['i']): j for j in d['jobs']}
     finish = {}
 
@@ -241,6 +244,76 @@ def reduction(rows):
     dump('reduction', {'integral': d['integral'], 'r': w[0], 's': w[1], 'procs': d['procs'], 'cache_hits': d['cache_hits'], 'non_masters_left': d['non_masters_left'],
                        'n_final_masters': len(d['final']), 'wall_s': d['wall_s'], 'ideal_s': max(x[2] for x in jobs),
                        'published': {'jobs': pub['sailir']['jobs'], 'cache_hits': pub['sailir']['cache_hits'], 'ideal_s': pub['sailir']['ideal_s']}, 'jobs': jobs})
+
+
+def fan():
+    """Lay the reduction out as a graph, and replay it generation by generation.
+
+    The replay substitutes every job's result exactly, so it must end on the same
+    expression as the orchestrator.
+    """
+    from ibp_env import PAPER_MASTERS
+    P = 1009
+    d = json.load(open(WORK_DIR / REDUCTION))
+    start = tuple(d['integral'])
+    out = {tuple(j['i']): {tuple(a): c for a, c in j['out']} for j in d['jobs']}
+    children = {u: [a for a in r if a in out] for u, r in out.items()}
+    assert all(u not in c for u, c in children.items())
+    indeg = Counter(v for c in children.values() for v in c)
+    gen = {u: 0 for u in out}
+    queue = [u for u in out if not indeg[u]]
+    assert queue == [start], queue[:5]
+    seen = 0
+    while queue:
+        u = queue.pop()
+        seen += 1
+        for v in children[u]:
+            gen[v] = max(gen[v], gen[u] + 1)
+            indeg[v] -= 1
+            if not indeg[v]:
+                queue.append(v)
+    assert seen == len(out), 'the job graph has a cycle'
+
+    n_gen = max(gen.values()) + 1
+    columns = defaultdict(list)
+    level = lambda a: sum(x > 0 for x in a[:6])
+    wt = lambda a: (sum(max(x, 0) for x in a), sum(max(-x, 0) for x in a))
+    for u in out:
+        columns[gen[u]].append(u)
+    expr, frontier, cancelled = {start: 1}, [], 0
+    for g in range(n_gen):
+        columns[g].sort(key=lambda a: (-level(a), [-x for x in wt(a)], a))
+        for u in columns[g]:
+            c = expr.pop(u, 0)
+            if not c:
+                cancelled += 1
+                continue
+            for a, v in out[u].items():
+                value = (expr.get(a, 0) + c * v) % P
+                if value:
+                    expr[a] = value
+                else:
+                    expr.pop(a, None)
+        frontier.append({'left': sum(a not in PAPER_MASTERS for a in expr), 'masters': sum(a in PAPER_MASTERS for a in expr)})
+    final = {tuple(a): c for a, c in d['final']}
+    assert expr == final, 'generation replay disagrees with the orchestrator'
+    assert all(a in PAPER_MASTERS for a in expr)
+
+    order = [u for g in range(n_gen) for u in columns[g]]
+    index = {u: i for i, u in enumerate(order)}
+    masters = sorted({a for r in out.values() for a in r if a in PAPER_MASTERS}, key=lambda a: (-level(a), a))
+    for j, m in enumerate(masters):
+        index[m] = len(order) + j
+    edges = [x for u in order for a in out[u] if a in index for x in (index[u], index[a])]
+    answer = sorted(final.items(), key=lambda kv: (-level(kv[0]), kv[0]))
+    dump('fan', {'integral': d['integral'], 'generations': n_gen, 'cancelled_jobs': cancelled,
+                 'nodes': [{'a': list(u), 'g': gen[u], 'level': level(u), 'r': wt(u)[0], 's': wt(u)[1]} for u in order],
+                 'masters': [{'a': list(m), 'c': final.get(m, 0)} for m in masters], 'edges': edges,
+                 'frontier': frontier, 'answer': [[list(a), c] for a, c in answer]})
+    print('generations', n_gen, 'jobs', len(order), 'edges', len(edges) // 2, 'cancelled jobs', cancelled,
+          'peak left', max(f['left'] for f in frontier), 'masters in answer', len(final))
+    print('width by generation', [len(columns[g]) for g in range(n_gen)])
+    print('left after each generation', [f['left'] for f in frontier])
 
 
 def play():
@@ -270,6 +343,7 @@ if __name__ == '__main__':
     scrambles(scored)
     anatomy(scored)
     reduction(rows)
+    fan()
     if 'beam' in which:
         beam()
     if 'play' in which:

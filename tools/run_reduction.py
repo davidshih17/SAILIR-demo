@@ -93,7 +93,8 @@ def main():
                         depth[child] = depth[integral] + 1
                         parent[child] = integral
                 j.update(time=r['time'], steps=r['steps'], terms=len(r['final_expr']),
-                         children=len(new), hits=hits, mem_kb=r['peak_memory_kb'])
+                         children=len(new), hits=hits, mem_kb=r['peak_memory_kb'],
+                         out=[[list(k), v] for k, v in r['final_expr'].items()])
             if seq and len(cache) % 25 == 0:
                 print(f'{time.time()-t0:7.0f}s done={len(cache)} pending={len(pending)} '
                       f'hits={cache_hits}', flush=True)
