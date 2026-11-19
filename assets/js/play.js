@@ -1,7 +1,7 @@
 // Section 1: reduce an integral by hand, with the real IBP identities and the real model.
 import { $, h, section, loadJSON, intStr, pct, mlNote, scrolling } from './ui.js';
 import { glyph } from './glyph.js';
-import { IBP, OP_NAMES, initialState, isMaster, inSector, key, nonMasters, parse, pickTarget, sectorOf, weight } from './ibp.js';
+import { IBP, OP_NAMES, initialState, isMaster, inSector, key, nonMasters, parse, pickTarget, sectorOf, termRole, weight } from './ibp.js';
 import { loadModel, scoreActions } from './model.js';
 
 const wStr = (w) => `(${w[0]}, ${w[1]})`;
@@ -11,7 +11,7 @@ export default async function build() {
   const root = section('play', {
     eyebrow: '1 · The task',
     title: 'Reduce an integral yourself',
-    lede: 'Each step picks one IBP or Lorentz-invariance identity and uses it to eliminate the highest-weight integral left in the sector. Choose the identities yourself, then compare your choices with the trained model running live in this browser.',
+    lede: 'Each step picks one IBP or Lorentz-invariance identity and uses it to eliminate the highest-weight integral left in the sector. Choose the identities yourself, or step through the choices of the trained model, which runs live in this browser.',
   });
   const [templates, play] = await Promise.all([loadJSON('templates'), loadJSON('play')]);
   const ibp = new IBP(templates);
@@ -26,10 +26,11 @@ export default async function build() {
   const list = h('div', { class: 'actions' });
   const banner = h('div', { class: 'banner', hidden: true });
   const bar = h('i');
-  const modelStatus = h('p', { class: 'note' }, 'The model (31 MB) starts loading once the page is at rest.');
+  const modelStatus = h('p', { class: 'note', id: 'play-status', style: 'min-height:3em' }, 'The model (31 MB) starts loading once the page is at rest.');
   const progress = h('div', { class: 'progress' }, bar);
   const revealBtn = h('button', { class: 'btn', type: 'button', id: 'play-reveal' }, 'Show the model\'s ranking');
-  const autoBtn = h('button', { class: 'btn primary', type: 'button', id: 'play-auto' }, 'Let the model finish');
+  const stepBtn = h('button', { class: 'btn primary', type: 'button', id: 'play-step', style: 'min-width:14.5em', disabled: true }, 'Show the model\'s next step');
+  const autoBtn = h('button', { class: 'btn', type: 'button', id: 'play-auto' }, 'Let the model finish');
   const undoBtn = h('button', { class: 'btn', type: 'button', id: 'play-undo' }, 'Undo');
   const resetBtn = h('button', { class: 'btn', type: 'button', id: 'play-reset' }, 'Restart');
 
@@ -42,11 +43,12 @@ export default async function build() {
           status, targetLine, exprBox, lowerNote),
         mlNote('In machine-learning terms', 'The <b>state</b> is the expression plus the substitutions made so far. An <b>action</b> is an identity and a seed. A <b>policy</b> is a rule that assigns a probability to every valid action. SAILIR\'s policy is a neural network.')),
       h('div', { class: 'panel stack' },
-        h('div', { class: 'row spread' }, h('h3', { id: 'play-count' }, 'Valid identities'), h('div', { class: 'row' }, revealBtn, autoBtn, undoBtn, resetBtn)),
+        h('h3', { id: 'play-count' }, 'Valid identities'),
+        h('div', { class: 'row' }, stepBtn, autoBtn, revealBtn, undoBtn, resetBtn),
         progress, modelStatus, list, equation)),
   );
 
-  let start, st, history, reveal = false, busy = false, scored = null, token = 0, modelReady = false, showAll = false;
+  let start, st, history, reveal = false, busy = false, scored = null, token = 0, modelReady = false, showAll = false, pick = null;
   const startInfo = () => play.starts.find((s) => key(s.integral) === key(start));
 
   // Wait for a pause in scrolling, so the download never competes with reading the page.
@@ -60,7 +62,7 @@ export default async function build() {
     }).catch((err) => {
       console.error(err); progress.style.visibility = 'hidden';
       modelStatus.textContent = 'The model could not start in this browser. You can still play with the identities.';
-      revealBtn.disabled = true; autoBtn.disabled = true;
+      revealBtn.disabled = true; autoBtn.disabled = true; stepBtn.disabled = true;
     });
   };
   function waitForQuiet() { clearTimeout(quiet); quiet = setTimeout(startModel, 1500); }
@@ -76,13 +78,20 @@ export default async function build() {
 
   function showEquation(target, action) {
     const { seed, cached } = ibp.equation(st, target, action);
-    const tk = key(target);
-    const entries = [...cached];
-    const shown = entries.filter(([k], i) => i < 12 || k === tk);
-    const more = entries.length - shown.length;
+    const terms = [...cached].map(([k, c]) => ({ k, c, role: termRole(parse(k), target), w: weight(parse(k)) }));
+    const of = (role) => terms.filter((t) => t.role === role);
+    const active = of('active').sort((x, y) => y.w[0] - x.w[0] || y.w[1] - x.w[1]);
+    const passengers = of('passenger');
+    const lead = [...of('target'), ...active];
+    const shown = [...lead, ...passengers.slice(0, Math.max(0, 12 - lead.length))];
+    const more = terms.length - shown.length;
+    const cls = { target: 't', active: 'a', passenger: 'p' };
     equation.replaceChildren(
       h('div', { class: 'note' }, `Op ${action.op} (${OP_NAMES[action.op]}) at seed ${intStr(seed)}, after earlier substitutions:`),
-      h('div', {}, shown.flatMap(([k, c], i) => [i ? ' + ' : '', h('span', { class: k === tk ? 't' : '' }, `${c}·I[${k}]`)]), more ? ` + ${more} more term${more === 1 ? "" : "s"}` : '', ' = 0 (mod 1009)'),
+      h('div', { class: 'eq' }, shown.flatMap((t, i) => [i ? ' + ' : '', h('span', { class: cls[t.role] }, `${t.c}·I[${t.k}]`)]), more ? ` + ${more} more passenger${more === 1 ? '' : 's'}` : '', ' = 0 (mod 1009)'),
+      h('div', { class: 'eq-key' }, h('span', { class: 't' }, 'Target'), ' · ',
+        h('span', { class: 'a' }, `${active.length} in this sector at the same or higher weight`), ' · ',
+        `${passengers.length} passenger${passengers.length === 1 ? '' : 's'}: subsector, master or lower weight`),
     );
   }
 
@@ -103,8 +112,20 @@ export default async function build() {
     list.replaceChildren(banner);
   }
 
+  // One button drives manual stepping: the first press shows the model's pick, the next applies it.
+  function syncStep() {
+    stepBtn.textContent = reveal ? 'Apply this step' : 'Show the model\'s next step';
+    stepBtn.disabled = !modelReady || busy || (reveal && !pick);
+    if (!modelReady) return;
+    if (!pick) { modelStatus.textContent = 'Model ready. It runs on this device.'; return; }
+    const seed = pick.target.map((x, j) => x + pick.action.delta[j]);
+    modelStatus.replaceChildren(h('b', {}, 'Model\'s pick: '), `Op ${pick.action.op} (${OP_NAMES[pick.action.op]}) at seed ${intStr(seed)}, with probability ${pct(pick.p, 0)}.`);
+  }
+
   async function render() {
     const me = ++token;
+    pick = null;
+    stepBtn.disabled = true;
     const sector = sectorOf(start);
     const target = pickTarget(st.expr, sector);
     const left = nonMasters(st.expr, sector);
@@ -128,7 +149,7 @@ export default async function build() {
     undoBtn.disabled = !history.length || busy;
     resetBtn.disabled = busy;
 
-    if (!target) { list.replaceChildren(); $('#play-count').textContent = 'Valid identities'; autoBtn.disabled = true; revealBtn.disabled = true; finish(); return; }
+    if (!target) { list.replaceChildren(); $('#play-count').textContent = 'Valid identities'; autoBtn.disabled = true; revealBtn.disabled = true; finish(); syncStep(); stepBtn.disabled = true; return; }
     banner.hidden = true;
     autoBtn.disabled = !modelReady || busy; revealBtn.disabled = !modelReady;
     const actions = ibp.validActions(target, st);
@@ -139,6 +160,7 @@ export default async function build() {
       scored = await scoreActions(st, target, actions);
       if (me !== token) return;
       rows.sort((x, y) => scored.probs[y.i] - scored.probs[x.i]);
+      if (rows[0]) pick = { target, action: rows[0].a, p: scored.probs[rows[0].i] };
     } else scored = null;
     list.replaceChildren(...rows.slice(0, showAll ? 60 : 8).map((r, idx) => {
       const p = scored?.probs[r.i];
@@ -156,6 +178,7 @@ export default async function build() {
       list.append(h('button', { class: 'btn', type: 'button', id: 'play-more', onclick: () => { showAll = !showAll; render(); } }, showAll ? 'Show fewer identities' : `Show ${extra} more identities`));
     }
     if (rows[0]) showEquation(target, rows[0].a);
+    syncStep();
     return { target, actions };
   }
 
@@ -175,6 +198,11 @@ export default async function build() {
     startRow.append(h('button', { class: 'chip', type: 'button', 'data-k': key(s.integral), onclick: () => { if (!busy) begin(s); } }, intStr(s.integral)));
   }
   revealBtn.addEventListener('click', () => { reveal = !reveal; revealBtn.textContent = reveal ? 'Hide the model\'s ranking' : 'Show the model\'s ranking'; render(); });
+  stepBtn.addEventListener('click', () => {
+    if (busy || !modelReady) return;
+    if (!reveal) { reveal = true; revealBtn.textContent = 'Hide the model\'s ranking'; render(); return; }
+    if (pick) choose(pick.target, pick.action);
+  });
   undoBtn.addEventListener('click', () => { if (history.length) { st = history.pop(); render(); } });
   resetBtn.addEventListener('click', () => begin(startInfo()));
   autoBtn.addEventListener('click', async () => {

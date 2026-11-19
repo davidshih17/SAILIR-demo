@@ -11,7 +11,7 @@
   --bg: #e9eff2; --surface: #f8fafb; --surface-2: #eff4f6; --ink: #102331; --muted: #47606f; --faint: #7a909d;
   --line: #cbd8df; --line-strong: #9fb3bf;
   --sailir: #008f9c; --sailir-soft: #d3ebee; --kira: #d4581a; --kira-soft: #f8e3d7;
-  --target: #c2264b; --target-soft: #f9dfe5; --good: #1f7a3f; --good-soft: #dcefe2;
+  --passenger: #5a7282; --target: #c2264b; --target-soft: #f9dfe5; --good: #1f7a3f; --good-soft: #dcefe2;
   --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
   --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -22,14 +22,14 @@
   --bg: #0b1821; --surface: #12242f; --surface-2: #182e3b; --ink: #e5eef3; --muted: #a5b9c5; --faint: #7d94a2;
   --line: #29424f; --line-strong: #41606f;
   --sailir: #1fa6b2; --sailir-soft: #123c45; --kira: #e0702f; --kira-soft: #472716;
-  --target: #f4688a; --target-soft: #4a1c2b; --good: #5cc17f; --good-soft: #17392a;
+  --passenger: #86a0af; --target: #f4688a; --target-soft: #4a1c2b; --good: #5cc17f; --good-soft: #17392a;
 } }
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0b1821; --surface: #12242f; --surface-2: #182e3b; --ink: #e5eef3; --muted: #a5b9c5; --faint: #7d94a2;
   --line: #29424f; --line-strong: #41606f;
   --sailir: #1fa6b2; --sailir-soft: #123c45; --kira: #e0702f; --kira-soft: #472716;
-  --target: #f4688a; --target-soft: #4a1c2b; --good: #5cc17f; --good-soft: #17392a;
+  --passenger: #86a0af; --target: #f4688a; --target-soft: #4a1c2b; --good: #5cc17f; --good-soft: #17392a;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -87,6 +87,7 @@ button, select, input { font: inherit; color: inherit; }
 .btn:hover:not(:disabled) { background: var(--surface-2); }
 .btn:disabled { opacity: 0.45; cursor: default; }
 .btn.primary { background: var(--sailir); border-color: var(--sailir); color: #fff; }
+.btn.primary:hover:not(:disabled) { background: var(--sailir); filter: brightness(0.92); }
 :root[data-theme="dark"] .btn.primary { color: #06161c; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.primary { color: #06161c; } }
 .chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 11px; font-size: 0.84rem; font-weight: 600; cursor: pointer; color: var(--muted); }
@@ -120,8 +121,11 @@ label.inline { display: inline-flex; align-items: center; gap: 6px; font-size: 0
 .action .what small { display: block; color: var(--muted); font-size: 0.8rem; }
 .action .eff { font: 400 0.76rem var(--mono); color: var(--muted); text-align: right; white-space: nowrap; }
 .action.top { border-color: var(--sailir); }
-.equation { font: 400 0.82rem/1.7 var(--mono); background: var(--surface-2); border-radius: 4px; padding: 7px 10px; overflow-x: auto; min-height: 10.5em; }
+.equation { font: 400 0.82rem/1.7 var(--mono); background: var(--surface-2); border-radius: 4px; padding: 7px 10px; overflow-x: auto; min-height: 13em; display: grid; gap: 3px; align-content: start; }
+.equation .eq, .equation .eq-key { color: var(--passenger); }
+.equation .eq-key { font-family: var(--body); font-size: 0.82rem; line-height: 1.35; }
 .equation .t { color: var(--target); font-weight: 500; }
+.equation .a { color: var(--ink); font-weight: 500; }
 .banner { border-radius: var(--radius); padding: 10px 14px; background: var(--good-soft); font-size: 0.98rem; }
 .progress { height: 5px; background: var(--line); border-radius: 3px; overflow: hidden; }
 .progress i { display: block; height: 100%; background: var(--sailir); transform: scaleX(0); transform-origin: left; }

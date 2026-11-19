@@ -40,6 +40,15 @@ export const sectorOf = (a) => a.slice(0, 6).map((x) => (x > 0 ? 1 : 0));
 export const inSector = (a, sector) => a.slice(0, 6).every((x, i) => (x > 0 ? 1 : 0) === sector[i]);
 export const isMaster = (a) => MASTERS.has(key(a));
 
+// How a term of an identity relates to the target.  Passengers need no attention in this episode:
+// masters, integrals in subsectors, and same-sector integrals of lower weight (r, s).
+export function termRole(a, target) {
+  if (key(a) === key(target)) return 'target';
+  if (isMaster(a) || !inSector(a, sectorOf(target))) return 'passenger';
+  const [wa, wt] = [weight(a), weight(target)];
+  return wa[0] < wt[0] || (wa[0] === wt[0] && wa[1] < wt[1]) ? 'passenger' : 'active';
+}
+
 // Templates arrive as [[ [shift...], "coefficient expression" ], ...], one list per operator.
 export class IBP {
   constructor(templates) {
