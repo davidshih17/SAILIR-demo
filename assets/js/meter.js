@@ -1,5 +1,5 @@
 // Optional scroll meter: open the page with ?meter to see how smoothly this device is scrolling.
-const BUILD = 3;
+const BUILD = 4;
 const box = document.createElement('div');
 box.className = 'meter';
 document.body.append(box);

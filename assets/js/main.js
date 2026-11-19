@@ -15,8 +15,6 @@ themeBtn.addEventListener('click', () => {
 syncTheme();
 
 $('#hero-glyph').append(glyph([1, 1, 2, 1, 1, 1, -2], { size: 460, labels: true }));
-$('#hero-glyph svg').style.maxWidth = '100%';
-$('#hero-glyph svg').style.height = 'auto';
 
 // Highlight the section in view; number keys 1-8 jump between sections.
 const nav = $('#topnav');
