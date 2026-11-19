@@ -12,13 +12,16 @@ async function init() {
   const total = Number(res.headers.get('content-length')) || 30947407;
   const reader = res.body.getReader();
   const chunks = [];
-  let got = 0;
+  let got = 0, lastReport = 0;
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
     chunks.push(value);
     got += value.length;
-    self.postMessage({ type: 'progress', fraction: Math.min(got / total, 1) });
+    if (performance.now() - lastReport > 250) {
+      lastReport = performance.now();
+      self.postMessage({ type: 'progress', fraction: Math.min(got / total, 1) });
+    }
   }
   const bytes = new Uint8Array(got);
   let at = 0;

@@ -40,6 +40,8 @@ addEventListener('keydown', (e) => {
   if (n >= 1 && n <= links.length) links[n - 1].click();
 });
 
+if (new URLSearchParams(location.search).has('meter')) import('./meter.js');
+
 // Sections are built in page order.  Each one reserves about its final height first, so content
 // never moves under the reader while the page fills in.  Heights are [desktop, phone] in pixels.
 const SECTIONS = {

@@ -1,5 +1,5 @@
 // Section 6: a recorded beam search over one real reduction episode.
-import { h, section, loadJSON, intStr, player, showTip, hideTip, duration, mlNote } from './ui.js';
+import { h, section, loadJSON, intStr, player, scrolling, showTip, hideTip, duration, mlNote } from './ui.js';
 
 const WIDTH = 1000, HEIGHT = 400, M = { l: 44, r: 16, t: 16, b: 30 };
 
@@ -84,6 +84,7 @@ export default async function build() {
     );
   }
   canvas.addEventListener('pointermove', (e) => {
+    if (scrolling()) return;
     const box = canvas.getBoundingClientRect();
     const x = ((e.clientX - box.left) / box.width) * WIDTH, y = ((e.clientY - box.top) / box.height) * HEIGHT;
     let best = null, bestD = 100;

@@ -50,8 +50,18 @@ export function section(id, { eyebrow, title, lede }) {
 
 export const mlNote = (title, html) => h('div', { class: 'ml' }, h('b', { class: 'tag' }, title), h('span', { html }));
 
+// While the page moves under a resting cursor, hover effects must not fire.
+let lastScroll = -1e9;
+addEventListener('scroll', () => {
+  lastScroll = performance.now();
+  const t = document.getElementById('tip');
+  if (t && !t.hidden) t.hidden = true;
+}, { passive: true });
+export const scrolling = () => performance.now() - lastScroll < 200;
+
 const tipEl = () => document.getElementById('tip');
 export function showTip(evt, html) {
+  if (scrolling()) return;
   const t = tipEl();
   t.innerHTML = html;
   t.hidden = false;
@@ -139,6 +149,7 @@ export function lineChart({ width = 520, height = 240, x, series, yLabel, xLabel
   const hit = svgEl('rect', { x: m.l, y: m.t, width: width - m.l - m.r, height: height - m.t - m.b, fill: 'transparent' });
   svg.append(hit);
   hit.addEventListener('pointermove', (e) => {
+    if (scrolling()) return;
     const box = svg.getBoundingClientRect();
     const px = ((e.clientX - box.left) / box.width) * width;
     let best = 0;

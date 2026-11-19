@@ -1,5 +1,5 @@
 // Section 1: reduce an integral by hand, with the real IBP identities and the real model.
-import { $, h, section, loadJSON, intStr, pct, mlNote } from './ui.js';
+import { $, h, section, loadJSON, intStr, pct, mlNote, scrolling } from './ui.js';
 import { glyph } from './glyph.js';
 import { IBP, OP_NAMES, initialState, isMaster, inSector, key, nonMasters, parse, pickTarget, sectorOf, weight } from './ibp.js';
 import { loadModel, scoreActions } from './model.js';
@@ -26,7 +26,7 @@ export default async function build() {
   const list = h('div', { class: 'actions' });
   const banner = h('div', { class: 'banner', hidden: true });
   const bar = h('i');
-  const modelStatus = h('p', { class: 'note' }, 'Preparing the model (31 MB, downloaded once)…');
+  const modelStatus = h('p', { class: 'note' }, 'The model (31 MB) starts loading once the page is at rest.');
   const progress = h('div', { class: 'progress' }, bar);
   const revealBtn = h('button', { class: 'btn', type: 'button', id: 'play-reveal' }, 'Show the model\'s ranking');
   const autoBtn = h('button', { class: 'btn primary', type: 'button', id: 'play-auto' }, 'Let the model finish');
@@ -46,18 +46,26 @@ export default async function build() {
         progress, modelStatus, list, equation)),
   );
 
-  let start, st, history, reveal = false, busy = false, scored = null, token = 0, modelReady = false, showAll = false, lastScroll = 0;
-  addEventListener('scroll', () => { lastScroll = performance.now(); }, { passive: true });
+  let start, st, history, reveal = false, busy = false, scored = null, token = 0, modelReady = false, showAll = false;
   const startInfo = () => play.starts.find((s) => key(s.integral) === key(start));
 
-  loadModel((f) => { bar.style.width = `${Math.round(f * 100)}%`; }).then(() => {
-    modelReady = true; progress.style.visibility = 'hidden'; modelStatus.textContent = 'Model ready. It runs on this device.';
-    render();
-  }).catch((err) => {
-    console.error(err); progress.style.visibility = 'hidden';
-    modelStatus.textContent = 'The model could not start in this browser. You can still play with the identities.';
-    revealBtn.disabled = true; autoBtn.disabled = true;
-  });
+  // Wait for a pause in scrolling, so the download never competes with reading the page.
+  let quiet = null;
+  const startModel = () => {
+    removeEventListener('scroll', waitForQuiet);
+    modelStatus.textContent = 'Loading the model (31 MB)…';
+    loadModel((f) => { bar.style.transform = `scaleX(${f.toFixed(3)})`; }).then(() => {
+      modelReady = true; progress.style.visibility = 'hidden'; modelStatus.textContent = 'Model ready. It runs on this device.';
+      render();
+    }).catch((err) => {
+      console.error(err); progress.style.visibility = 'hidden';
+      modelStatus.textContent = 'The model could not start in this browser. You can still play with the identities.';
+      revealBtn.disabled = true; autoBtn.disabled = true;
+    });
+  };
+  function waitForQuiet() { clearTimeout(quiet); quiet = setTimeout(startModel, 1500); }
+  addEventListener('scroll', waitForQuiet, { passive: true });
+  waitForQuiet();
 
   function effect(target, action) {
     const next = ibp.apply(st, target, action);
@@ -79,7 +87,7 @@ export default async function build() {
   }
 
   // Scrolling moves rows under a still pointer; only a deliberate hover should update the equation.
-  const hoverEquation = (target, action) => { if (performance.now() - lastScroll > 200) showEquation(target, action); };
+  const hoverEquation = (target, action) => { if (!scrolling()) showEquation(target, action); };
 
   function finish() {
     const info = startInfo();
